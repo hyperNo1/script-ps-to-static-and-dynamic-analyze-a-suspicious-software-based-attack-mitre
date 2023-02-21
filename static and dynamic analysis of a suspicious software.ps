@@ -1,0 +1,39 @@
+# Static Analysis
+
+# Calculate the MD5 hash of the file
+$md5 = (Get-FileHash -Path "C:\path\to\file.exe" -Algorithm MD5).Hash
+
+# Check the MD5 hash against a list of known malicious hashes
+if ($md5 -in @('4d676ab097f9420ed6989da24e67bdcb', '...')) {
+    Write-Host "File hash matches known malicious hash"
+}
+
+# Check the file's properties for suspicious information
+$fileProperties = Get-ItemProperty -Path "C:\path\to\file.exe"
+if ($fileProperties.Company -eq $null -or $fileProperties.Company -eq "") {
+    Write-Host "File is missing Company information"
+}
+if ($fileProperties.Description -eq $null -or $fileProperties.Description -eq "") {
+    Write-Host "File is missing Description information"
+}
+if ($fileProperties.ProductName -eq $null -or $fileProperties.ProductName -eq "") {
+    Write-Host "File is missing ProductName information"
+}
+
+# Dynamic Analysis
+
+# Execute the file in a sandbox environment and monitor its behavior
+# For example, use Sysmon to capture process events
+.\Sysmon.exe -accepteula -i sysmonconfig.xml
+
+# Execute the file and wait for it to exit
+Start-Process -FilePath "C:\path\to\file.exe" -Wait
+
+# Analyze the Sysmon events to identify any suspicious behavior
+$sysmonEvents = Get-WinEvent -LogName "Microsoft-Windows-Sysmon/Operational" | Where-Object {$_.Id -eq 1}
+foreach ($event in $sysmonEvents) {
+    # Look for any suspicious network activity, file modifications, process creations, etc.
+    if ($event.EventData.Data -contains "evil.com") {
+        Write-Host "File attempted to connect to evil.com"
+    }
+}
